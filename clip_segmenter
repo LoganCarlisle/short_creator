@@ -1,0 +1,57 @@
+from clipsai import ClipFinder, Transcriber
+import magic
+import os
+import ffmpeg
+import subprocess
+import nltk
+from moviepy.editor import VideoFileClip
+
+import whisper
+from faster_whisper import WhisperModel
+
+
+
+youtube_to_mp4="https://tubemp4.is/"
+nltk.download('punkt_tab')
+os.environ['PATH'] += r'path'
+save_path = r"D:\VideoClips\ClippedVideos"
+try:
+    result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True)
+    print(result.stdout)
+except FileNotFoundError:
+    print("FFmpeg not found. Please ensure it's installed and added to the PATH.")
+transcriber = Transcriber()
+file_path = r"whatever"
+if not os.path.exists(file_path):
+    print(f"File not found: {file_path}")
+else:
+    print("file found jit tripping")
+    transcription = transcriber.transcribe(audio_file_path=file_path)
+
+
+clipfinder = ClipFinder()
+clips = clipfinder.find_clips(transcription=transcription)
+print(f"Total clips found: {len(clips)}")
+print("StartTime: ", clips[0].start_time)
+print("EndTime: ", clips[0].end_time)
+print("StartTime: ", clips[1].start_time)
+print("EndTime: ", clips[1].end_time)
+for i, clip in enumerate(clips):
+    start_time_minutes = clip.start_time / 60  
+    end_time_minutes = clip.end_time / 60     
+    print(f"Clip {i + 1}: Start Time: {start_time_minutes:.2f} min, End Time: {end_time_minutes:.2f} min")
+
+filtered_clips = [clip for clip in clips if (clip.end_time - clip.start_time) <= 90]
+edited_clips = []
+
+
+original_video = VideoFileClip(r"video")
+for i, clip in enumerate(filtered_clips):
+    start_time = clip.start_time  
+    end_time = clip.end_time  
+    subclip = original_video.subclip(start_time, end_time)
+    edited_clips.append(subclip)
+
+    subclip.write_videofile(os.path.join(save_path, f"clip_{i + 1}.mp4"), codec="libx264")
+
+original_video.close()
